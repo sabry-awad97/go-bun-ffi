@@ -10,6 +10,10 @@ export class SharedLibrary implements ILibrary {
       args: FFIType.ptr[];
       returns: FFIType.ptr;
     };
+    FreeString: {
+      args: [FFIType.ptr]; // Pointer to the C string to free
+      returns: FFIType.void; // No return value
+    };
   }>;
 
   constructor(libraryPath: string) {
@@ -17,6 +21,10 @@ export class SharedLibrary implements ILibrary {
       Greet: {
         args: [FFIType.ptr],
         returns: FFIType.ptr,
+      },
+      FreeString: {
+        args: [FFIType.ptr],
+        returns: FFIType.void,
       },
     });
   }
@@ -34,8 +42,13 @@ export class SharedLibrary implements ILibrary {
       throw new Error("Failed to call Greet function");
     }
 
+    const result = new CString(resultPtr).toString();
+
+    // Free the name buffer allocated by the Go function
+    this.lib.symbols.FreeString(resultPtr);
+
     // Convert the result pointer to a JavaScript string
-    return new CString(resultPtr).toString();
+    return result;
   }
 
   private encode(data: string): Uint8Array {
@@ -44,4 +57,3 @@ export class SharedLibrary implements ILibrary {
     return encoder.encode(data + "\0");
   }
 }
-
